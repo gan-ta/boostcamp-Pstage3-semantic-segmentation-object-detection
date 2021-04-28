@@ -120,7 +120,6 @@ class ASPP(nn.Module):
         
         return out
 
-    
 class DeepLabV2(nn.Module):
     ## VGG 위에 ASPP 쌓기
     def __init__(self, backbone, classifier, upsampling=8):
@@ -128,13 +127,13 @@ class DeepLabV2(nn.Module):
         self.backbone = backbone
         self.classifier = classifier
         self.upsampling = upsampling
-        
+
     def forward(self, x):
         x = self.backbone(x)
         _, _, feature_map_h, feature_map_w = x.size()
         x = self.classifier(x)
         out = F.interpolate(x, size=(feature_map_h * self.upsampling, feature_map_w * self.upsampling), mode="bilinear")
-        return x
+        return out
 
 if __name__ == '__main__':
     backbone = VGG16()
