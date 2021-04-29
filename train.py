@@ -253,7 +253,7 @@ if __name__ == '__main__':
 
     sys.path.append("/opt/ml/pstage03")
     from dataloader.image import *
-    from model.models import *
+    from model.FCN8s import *
     from model.deeplabv3+(effib7) import *
     from util.loss import *
     from util.utils import *
