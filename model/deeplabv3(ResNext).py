@@ -69,13 +69,9 @@ class ASPP(nn.Module):
 
     def forward(self, x):
         x1 = self.aspp1(x)
-        print("x1 shape", x1.shape)
         x2 = self.aspp2(x)
-        print("x2 shape", x2.shape)
         x3 = self.aspp3(x)
-        print("x3 shape", x3.shape)
         x4 = self.aspp4(x)
-        print("x4 shape", x4.shape)
         x5 = self.global_avg_pool(x)
         x5 = F.interpolate(x5, size=x.size()[2:], mode='bilinear', align_corners=True) # image pooling부분은 원본 크기만큼 upsampling
         x = torch.cat((x1, x2, x3, x4, x5), dim=1)
@@ -92,11 +88,11 @@ class DeepLabHead(nn.Sequential):
         self.add_module("3", nn.ReLU())
         self.add_module("4", nn.Conv2d(out_ch, n_classes, kernel_size=1, stride=1)) # classification
 
-class ResNext_DeepLabV3_encoder_pretrain(nn.Sequential):
+class ResNextDeepLabV3EncoderPretrain(nn.Sequential):
     """인코더 부분만 pretrain된 모델
     """
     def __init__(self, n_classes, atrous_rates):
-        super(DeepLabV3_ResNext, self).__init__()
+        super(ResNextDeepLabV3EncoderPretrain, self).__init__()
         backbone = models.resnext101_32x8d(pretrained=True)
         self.encoder = nn.Sequential(
             backbone.conv1,
@@ -132,3 +128,15 @@ class ResNextDeepLabV3AllTrain(nn.Module):
         
         return output
 
+if __name__ == '__main__':
+    model = ResNextDeepLabV3EncoderPretrain(12,[1, 12, 24, 36])
+    x = torch.randn([2, 3, 512, 512])
+    print("input shape : ", x.shape)
+    out = model(x)
+    print("output shape : ", out.size())
+
+    model = ResNextDeepLabV3AllTrain(3,12)
+    x = torch.randn([2, 3, 512, 512])
+    print("input shape : ", x.shape)
+    out = model(x)
+    print("output shape : ", out.size())
