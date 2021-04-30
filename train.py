@@ -10,6 +10,7 @@ warnings.filterwarnings('ignore')
 import torch
 import torch.nn as nn
 from tqdm import tqdm
+import numpy as np
 
 
 dataset_path = '/opt/ml/input/data'
@@ -42,22 +43,6 @@ def __get_logger():
 
 logger = __get_logger()
 
-
-def seed_everything(seed):
-    """ seed설정 함수
-
-    Args : 
-        seed(int) : 시드값 설정 변수
-    """
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-
 # ********************************************
 # val_every = 1 
 # saved_dir = './saved'
@@ -87,9 +72,66 @@ def train(num_epochs, model, data_loader, val_loader, criterion, optimizer, save
     """ 
     logger.info('Start training..')
     best_loss = 9999999
+    best_miou = 0
     for epoch in range(num_epochs):
         model.train()
-        for step, (images, masks, _) in enumerate(tqdm(data_loader)):
+        for step, (paths, images, masks, _) in enumerate(tqdm(data_loader)):
+            
+            # cutmix Augmentation
+            #*********************************************************
+            # images = list(images)
+            # masks = list(masks)
+            
+            # for i in range(int(batch_size / 2)):
+            #     temp_image_update = custom_cutmix(
+            #         cv2.cvtColor(cv2.imread(image_paths[i*2]), cv2.COLOR_BGR2RGB),
+            #         cv2.cvtColor(cv2.imread(image_paths[i*2 + 1]), cv2.COLOR_BGR2RGB),
+            #         temp_masks[i*2],
+            #         temp_masks[i*2 + 1]
+            #     )
+                
+            #     images.append(temp_image_update[0].permute([2,0,1]))
+            #     images.append(temp_image_update[1].permute([2,0,1]))
+            #     masks.append(temp_image_update[2])
+            #     masks.append(temp_image_update[3])
+            
+            # images = tuple(images)
+            # masks = tuple(masks)
+            #*********************************************************
+
+            # mixup Train
+            #*********************************************************
+            # aug_images = []
+            # aug_masks1 = tuple(list(masks)[::2].copy())
+            # aug_masks2 = tuple(list(masks)[1::2].copy())
+            # for i in range(int(batch_size / 2)):
+            #     img, beta, alpha = custom_mixup(
+            #         paths[i*2], paths[i*2 + 1], alpha = 0.5
+            #     )
+                
+            #     aug_images.append(img.permute([2,0,1]))
+            
+            # aug_images = torch.stack(aug_images)       # (batch, channel, height, width)
+            # aug_masks1 = torch.stack(aug_masks1).long()  # (batch, channel, height, width)
+            # aug_masks2 = torch.stack(aug_masks2).long()  # (batch, channel, height, width)
+            # aug_images, aug_masks1, aug_masks2 = aug_images.to(device), aug_masks1.to(device), aug_masks2.to(device)
+            # # inference
+            # outputs = model(aug_images)
+            
+            # # loss 계산 (cross entropy loss)
+            # loss_beta = criterion(outputs, aug_masks1) # beta influence
+            # loss_alpha = criterion(outputs, aug_masks2) # alpha influence
+            
+            # loss = loss_beta * beta + loss_alpha * alpha
+            
+            
+            # optimizer.zero_grad()
+            # loss.backward()
+            # optimizer.step()
+            #*********************************************************
+             
+
+
             images = torch.stack(images)       # (batch, channel, height, width)
             masks = torch.stack(masks).long()  # (batch, channel, height, width)
             
@@ -112,12 +154,12 @@ def train(num_epochs, model, data_loader, val_loader, criterion, optimizer, save
         
         # validation 주기에 따른 loss 출력 및 best model 저장
         if (epoch + 1) % val_every == 0:
-            avrg_loss = validation(epoch + 1, model, val_loader, criterion, device)
-            if avrg_loss < best_loss:
+            miou_temp = validation(epoch + 1, model, val_loader, criterion, device)
+            if best_miou < miou_temp:
                 print('Best performance at epoch: {}'.format(epoch + 1))
                 print('Save model in', saved_dir)
-                best_loss = avrg_loss
-                save_model(model, saved_dir)
+                best_miou = miou_temp
+                save_model(model, saved_dir, CFG.name)
 
 def validation(epoch, model, data_loader, criterion, device):
     """validation평가를 위한 함수
@@ -135,7 +177,7 @@ def validation(epoch, model, data_loader, criterion, device):
         total_loss = 0
         cnt = 0
         mIoU_list = []
-        for step, (images, masks, _) in enumerate(tqdm(data_loader)):
+        for step, (_, images, masks, _) in enumerate(tqdm(data_loader)):
             
             images = torch.stack(images)       # (batch, channel, height, width)
             masks = torch.stack(masks).long()  # (batch, channel, height, width)
@@ -155,7 +197,7 @@ def validation(epoch, model, data_loader, criterion, device):
         avrg_loss = total_loss / cnt
         print('Validation #{}  Average Loss: {:.4f}, mIoU: {:.4f}'.format(epoch, avrg_loss, np.mean(mIoU_list)))
 
-    return avrg_loss
+    return np.mean(mIoU_list)
 
 def main():
     """train 메인 로직 수행
@@ -194,7 +236,8 @@ def main():
     batch_size=CFG.batch_size,
     shuffle=True,
     num_workers=4,
-    collate_fn=collate_fn
+    collate_fn=collate_fn,
+    drop_last= True
     )
 
     val_loader = torch.utils.data.DataLoader(dataset=val_dataset, 
@@ -204,9 +247,10 @@ def main():
     collate_fn=collate_fn
     )
 
-    model = FCN8s(num_classes=12)
+    # model = DeepLabV3EffiB7Timm(n_classes=12, n_blocks=[3, 4, 23, 3], atrous_rates=[6, 12, 18, 24])
+    model = ResNextDeepLabV3AllTrain()
     logger.info("*************Model Formatting Test************")
-    x = torch.randn([1, 3, 512, 512])
+    x = torch.randn([2, 3, 512, 512])
     logger.info(f"input shape : {x.shape}")
     out = model(x).to(device)
     logger.info(f"output shape :  {out.size()}")
@@ -241,20 +285,48 @@ class CFG:
   weight_decay = 1e-6
   save_path = "./saved"
   aug_type = "basic"
+  name = "default.pt"
+
+# def seed_everything(random_seed):
+#     """ seed설정 함수
+
+#     Args : 
+#         random_seed(int) : 시드값 설정 변수
+#     """
+#     os.environ['PYTHONHASHSEED'] = str(random_seed)
+#     torch.manual_seed(random_seed)
+#     torch.cuda.manual_seed(random_seed)
+#     torch.cuda.manual_seed_all(random_seed) # if use multi-GPU
+#     torch.backends.cudnn.deterministic = True
+#     torch.backends.cudnn.benchmark = False
+#     np.random.seed(random_seed)
+#     random.seed(random_seed)
+
+def seed_everything(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # if use multi-GPU
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
 
 
 if __name__ == '__main__':
+    seed_everything(21)
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', default=None, type=str,help='config file path')
     parser.add_argument('-s', '--save', default=None, type=str,help='save path')
-    
+    parser.add_argument('-n', '--name', default=None, type=str,help='save model name')
     
     args = parser.parse_args()
 
-    sys.path.append("/opt/ml/pstage03")
+    sys.path.append("/opt/ml/p3-ims-obd-detecting-your-mind-ssap-possible")
     from dataloader.image import *
     from model.FCN8s import *
-    from model.deeplabv3+(effib7) import *
+    from model.deeplabv3Plus_effib7 import *
+    from model.deeplabv3_ResNext import *
+    from model.efficientb7_DeepLabv3_timm import *
     from util.loss import *
     from util.utils import *
     from util.augmentation import *
@@ -270,8 +342,7 @@ if __name__ == '__main__':
     CFG.weight_decay = json_data['weight_decay']
     CFG.aug_type = json_data['aug_type']
     CFG.save_path = args.save
-
-    seed_everything(CFG.seed)
+    CFG.name = args.name
 
     # save 디렉토리 생성
     if not os.path.isdir(CFG.save_path):

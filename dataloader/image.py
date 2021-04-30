@@ -92,6 +92,7 @@ class CustomDataLoader(Dataset):
         image_infos = self.coco.loadImgs(image_id)[0]
         
         # cv2 를 활용하여 image 불러오기
+        paths = os.path.join(dataset_path, image_infos['file_name'])
         images = cv2.imread(os.path.join(dataset_path, image_infos['file_name']))
         images = cv2.cvtColor(images, cv2.COLOR_BGR2RGB).astype(np.float32)
         images /= 255.0
@@ -121,7 +122,7 @@ class CustomDataLoader(Dataset):
                 images = transformed["image"]
                 masks = transformed["mask"]
             
-            return images, masks, image_infos
+            return paths, images, masks, image_infos
         
         if self.mode == 'test':
             # transform -> albumentations 라이브러리 활용
