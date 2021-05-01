@@ -1,6 +1,8 @@
+import torchvision.models as models
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+import segmentation_models_pytorch as smp
 
 def conv3x3_relu(in_ch, out_ch, rate=1):
     conv3x3_relu = nn.Sequential(nn.Conv2d(in_ch, 
@@ -11,52 +13,6 @@ def conv3x3_relu(in_ch, out_ch, rate=1):
                                            dilation=rate),
                                  nn.ReLU())
     return conv3x3_relu
-
-
-class VGG16(nn.Module):
-    def __init__(self):
-        super(VGG16, self).__init__()
-        self.conv1 = nn.Sequential(
-            conv3x3_relu(3, 64),
-            conv3x3_relu(64, 64),
-            nn.MaxPool2d(3, stride=2, padding=1) # 1/2
-        )
-        
-        self.conv2 = nn.Sequential(
-            conv3x3_relu(64, 128),
-            conv3x3_relu(128, 128),
-            nn.MaxPool2d(3, stride=2, padding=1) # 1/2 
-        )
-        
-        self.conv3 = nn.Sequential(
-            conv3x3_relu(128, 256),
-            conv3x3_relu(256, 256),
-            conv3x3_relu(256, 256),
-            nn.MaxPool2d(3, stride=2, padding=1) # 1/2
-        )
-        
-        self.conv4 = nn.Sequential(
-            conv3x3_relu(256, 512),
-            conv3x3_relu(512, 512),
-            conv3x3_relu(512, 512),
-            nn.MaxPool2d(3, stride=1, padding=1)
-        )
-        
-        self.conv5 = nn.Sequential(
-            conv3x3_relu(512, 512, rate=2),
-            conv3x3_relu(512, 512, rate=2),
-            conv3x3_relu(512, 512, rate=2),
-            nn.MaxPool2d(3, stride=1, padding=1)
-        )
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
-        
-        return x
 
 class ASPPConv(nn.Module):
     def __init__(self, inplanes, outplanes, kernel_size, padding, dilation):
@@ -92,9 +48,9 @@ class ASPPPooling(nn.Module):
 
     
 class ASPP(nn.Module):
-    def __init__(self, inplanes, outplanes):
+    def __init__(self, inplanes, outplanes,atrous_rates):
         super(ASPP, self).__init__()
-        rates = [1, 6, 12, 18]
+        rates = atrous_rates
         
         self.aspp1 = ASPPConv(inplanes, outplanes, 1, padding=0, dilation=rates[0])
         self.aspp2 = ASPPConv(inplanes, outplanes, 3, padding=rates[1], dilation=rates[1])
@@ -122,32 +78,64 @@ class ASPP(nn.Module):
         
         out = self.project(x)
         return out
-
+    
 class DeepLabHead(nn.Sequential):
-    def __init__(self, in_ch, out_ch, n_classes):
+    def __init__(self, in_ch, out_ch, n_classes, atrous_rates):
         super(DeepLabHead, self).__init__()
-        self.add_module("0", ASPP(in_ch, out_ch))
+        self.add_module("0", ASPP(in_ch, out_ch,atrous_rates))
         self.add_module("1", nn.Conv2d(out_ch, out_ch, kernel_size=3, stride=1, padding=1 , bias=False)) # passing convolution
         self.add_module("2", nn.BatchNorm2d(out_ch))
         self.add_module("3", nn.ReLU())
         self.add_module("4", nn.Conv2d(out_ch, n_classes, kernel_size=1, stride=1)) # classification
 
-class DeepLabV3(nn.Sequential):
-    def __init__(self, n_classes, n_blocks, atrous_rates):
-        super(DeepLabV3, self).__init__()
-        self.backbone = VGG16()
-        self.classifier = DeepLabHead(in_ch=512, out_ch=256, n_classes=12)
+class ResNextDeepLabV3EncoderPretrain(nn.Sequential):
+    """인코더 부분만 pretrain된 모델
+    """
+    def __init__(self, n_classes, atrous_rates):
+        super(ResNextDeepLabV3EncoderPretrain, self).__init__()
+        backbone = models.resnext101_32x8d(pretrained=True)
+        self.encoder = nn.Sequential(
+            backbone.conv1,
+            backbone.bn1,
+            backbone.relu,
+            backbone.maxpool,
+            backbone.layer1,
+            backbone.layer2,
+            backbone.layer3,
+            backbone.layer4
+        )
+        self.decoder = DeepLabHead(in_ch=2048, out_ch=256, n_classes=12,atrous_rates=atrous_rates)
 
     def forward(self, x):
-        h = self.backbone(x)
-        h = self.classifier(h)
+        h = self.encoder(x)
+        h = self.decoder(h)
         output = F.interpolate(h, size=x.shape[2:], mode="bilinear", align_corners=False)
         
         return output
 
+class ResNextDeepLabV3AllTrain(nn.Module):
+    def __init__(self, in_channels = 3, classes = 12):
+        super(ResNextDeepLabV3AllTrain, self).__init__()
+        self.backbone = smp.DeepLabV3(
+            encoder_name="resnext101_32x8d",
+            encoder_weights= "imagenet",
+            in_channels=in_channels,
+            classes=classes
+            )
+
+    def forward(self, x):
+        output = self.backbone(x)
+        
+        return output
+
 if __name__ == '__main__':
-    model = DeepLabV3(n_classes=12, n_blocks=[3, 4, 23, 3], atrous_rates=[6, 12, 18, 24])
-    
+    model = ResNextDeepLabV3EncoderPretrain(12,[1, 12, 24, 36])
+    x = torch.randn([2, 3, 512, 512])
+    print("input shape : ", x.shape)
+    out = model(x)
+    print("output shape : ", out.size())
+
+    model = ResNextDeepLabV3AllTrain(3,12)
     x = torch.randn([2, 3, 512, 512])
     print("input shape : ", x.shape)
     out = model(x)

@@ -17,6 +17,23 @@ train_path = dataset_path + '/train.json'
 val_path = dataset_path + '/val.json'
 test_path = dataset_path + '/test.json'
 
+class CFG:
+    epochs =  20
+    seed = 21
+    learning_rate = 0.0001
+    batch_size = 16
+    weight_decay = 1e-6
+    save_path = "./saved"
+    aug_type = "basic"
+    train_all = False
+    save_name= "default_model"
+    encoder_name = None
+    decoder_name = None
+    pretrain_weight = None
+    model_type = None
+    
+
+
 class ParameterError(Exception):
     def __init__(self):
         super().__init__('Enter essential parameters')
@@ -62,7 +79,7 @@ def seed_everything(seed):
 # val_every = 1 
 # saved_dir = './saved'
     
-def save_model(model, saved_dir, file_name='fcn8s_best_model(pretrained).pt'):
+def save_model(model, saved_dir, file_name=CFG.save_name):
     check_point = {'net': model.state_dict()}
     output_path = os.path.join(saved_dir, file_name)
     torch.save(model.state_dict(), output_path)
@@ -86,10 +103,68 @@ def train(num_epochs, model, data_loader, val_loader, criterion, optimizer, save
         device(device) : 사용 device
     """ 
     logger.info('Start training..')
-    best_loss = 9999999
+    best_mIoU = 0
+    
     for epoch in range(num_epochs):
         model.train()
-        for step, (images, masks, _) in enumerate(tqdm(data_loader)):
+        mIoU_list=[]
+        hist=np.zeros((12,12))
+        for step, (paths,images, masks, _) in enumerate(tqdm(data_loader)):
+
+            # cutmix Augmentation
+            #*********************************************************
+            # images = list(images)
+            # masks = list(masks)
+            
+            # for i in range(int(CFG.batch_size / 2)):
+            #     temp_image_update = custom_cutmix(
+            #         cv2.cvtColor(cv2.imread(image_paths[i*2]), cv2.COLOR_BGR2RGB),
+            #         cv2.cvtColor(cv2.imread(image_paths[i*2 + 1]), cv2.COLOR_BGR2RGB),
+            #         masks[i*2],
+            #         masks[i*2 + 1]
+            #     )
+                
+            #     images.append(temp_image_update[0].permute([2,0,1]))
+            #     images.append(temp_image_update[1].permute([2,0,1]))
+            #     masks.append(temp_image_update[2])
+            #     masks.append(temp_image_update[3])
+            
+            # images = tuple(images)
+            # masks = tuple(masks)
+            #*********************************************************
+
+            # mixup Train
+            #*********************************************************
+            # aug_images = []
+            # aug_masks1 = tuple(list(masks)[::2].copy())
+            # aug_masks2 = tuple(list(masks)[1::2].copy())
+            # for i in range(int(batch_size / 2)):
+            #     img, beta, alpha = custom_mixup(
+            #         paths[i*2], paths[i*2 + 1], alpha = 0.5
+            #     )
+                
+            #     aug_images.append(img.permute([2,0,1]))
+            
+            # aug_images = torch.stack(aug_images)       # (batch, channel, height, width)
+            # aug_masks1 = torch.stack(aug_masks1).long()  # (batch, channel, height, width)
+            # aug_masks2 = torch.stack(aug_masks2).long()  # (batch, channel, height, width)
+            # aug_images, aug_masks1, aug_masks2 = aug_images.to(device), aug_masks1.to(device), aug_masks2.to(device)
+            # # inference
+            # outputs = model(aug_images)
+            
+            # # loss 계산 (cross entropy loss)
+            # loss_beta = criterion(outputs, aug_masks1) # beta influence
+            # loss_alpha = criterion(outputs, aug_masks2) # alpha influence
+            
+            # loss = loss_beta * beta + loss_alpha * alpha
+            
+            
+            # optimizer.zero_grad()
+            # loss.backward()
+            # optimizer.step()
+            #*********************************************************
+
+
             images = torch.stack(images)       # (batch, channel, height, width)
             masks = torch.stack(masks).long()  # (batch, channel, height, width)
             
@@ -104,20 +179,36 @@ def train(num_epochs, model, data_loader, val_loader, criterion, optimizer, save
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            
+            # train_all 시, step마다 miou 누적계산
+            if(CFG.train_all):
+                outputs = torch.argmax(outputs.squeeze(), dim=1).detach().cpu().numpy()
+                hist=add_hist(hist, masks.detach().cpu().numpy(), outputs, n_class=12)
+                acc, acc_cls, mIoU, fwavacc = label_accuracy_score(hist)
+                mIoU_list.append(mIoU)
             # step 주기에 따른 loss 출력
             if (step + 1) % 25 == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(
                     epoch+1, num_epochs, step+1, len(data_loader), loss.item()))
         
         # validation 주기에 따른 loss 출력 및 best model 저장
+        
         if (epoch + 1) % val_every == 0:
-            avrg_loss = validation(epoch + 1, model, val_loader, criterion, device)
-            if avrg_loss < best_loss:
-                print('Best performance at epoch: {}'.format(epoch + 1))
-                print('Save model in', saved_dir)
-                best_loss = avrg_loss
-                save_model(model, saved_dir)
+            # train_all 시, epoch마다 validation 대신 train 간 평균 mIoU best model 저장.
+            if(CFG.train_all):
+                train_epoch_miou=np.mean(mIoU_list)
+                if train_epoch_miou > best_mIoU:
+                    print('Best performance at epoch: {} , mIoU : {}'.format(epoch + 1,train_epoch_miou))
+                    print('Save model in', saved_dir)
+                    best_mIoU = train_epoch_miou
+                    save_model(model, saved_dir)
+            else:
+            # validation 간 best mIoU 모델 저장
+                avgr_loss,val_epoch_miou = validation(epoch + 1, model, val_loader, criterion, device)
+                if val_epoch_miou > best_mIoU:
+                    print('Best performance at epoch: {} , val_mIoU: {}'.format(epoch + 1,val_epoch_miou))
+                    print('Save model in', saved_dir)
+                    best_mIoU = val_epoch_miou
+                    save_model(model, saved_dir)
 
 def validation(epoch, model, data_loader, criterion, device):
     """validation평가를 위한 함수
@@ -131,6 +222,7 @@ def validation(epoch, model, data_loader, criterion, device):
     """
     logger.info('Start validation #{}'.format(epoch))
     model.eval()
+    hist=np.zeros((12,12))
     with torch.no_grad():
         total_loss = 0
         cnt = 0
@@ -148,14 +240,13 @@ def validation(epoch, model, data_loader, criterion, device):
             cnt += 1
             
             outputs = torch.argmax(outputs.squeeze(), dim=1).detach().cpu().numpy()
-
-            mIoU = label_accuracy_score(masks.detach().cpu().numpy(), outputs, n_class=12)[2]
+            hist=add_hist(hist, masks.detach().cpu().numpy(), outputs, n_class=12)
+            acc, acc_cls, mIoU, fwavacc = label_accuracy_score(hist)
             mIoU_list.append(mIoU)
             
         avrg_loss = total_loss / cnt
-        print('Validation #{}  Average Loss: {:.4f}, mIoU: {:.4f}'.format(epoch, avrg_loss, np.mean(mIoU_list)))
-
-    return avrg_loss
+        print('Validation #{}  Average Loss: {:.4f}, mIoU: {:.4f}'.format(epoch, avrg_loss, mIoU))
+    return avrg_loss,np.mean(mIoU_list)
 
 def main():
     """train 메인 로직 수행
@@ -166,6 +257,11 @@ def main():
     logger.info(f"learning rate : {CFG.learning_rate}")
     logger.info(f"batch size : {CFG.batch_size}")
     logger.info(f"weight decay : {CFG.weight_decay}")
+    logger.info(f"save_name : {CFG.save_name}")
+    logger.info(f"encoder_name : {CFG.encoder_name}")
+    logger.info(f"decoder_name : {CFG.decoder_name}")
+    logger.info(f"pretrained_weight : {CFG.pretrain_weight}")
+    logger.info(f"train all : {CFG.train_all}")
     logger.info("********************************\n")
 
     if torch.cuda.is_available():
@@ -180,33 +276,46 @@ def main():
         device = torch.device("cpu")
         logger.info("*************************************\n")
 
-    
     train_transform, val_transform, test_transform = get_transforms(CFG.aug_type)
 
     # train dataset
-    train_dataset = CustomDataLoader(data_dir=train_path, mode='train', transform=train_transform)
-    
-    # validation dataset
-    val_dataset = CustomDataLoader(data_dir=val_path, mode='val', transform=val_transform)
+    if(CFG.train_all):
+        train_path=dataset_path + '/train_all.json'
+    else:
+        train_path=dataset_path + '/train.json'
 
-    # DataLoader
+    # train dataset
+    train_dataset = CustomDataLoader(data_dir=train_path, mode='train', transform=train_transform)
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, 
     batch_size=CFG.batch_size,
     shuffle=True,
-    num_workers=4,
-    collate_fn=collate_fn
+    num_workers=0,
+    collate_fn=collate_fn,
+    drop_last=True
     )
-
-    val_loader = torch.utils.data.DataLoader(dataset=val_dataset, 
-    batch_size= CFG.batch_size,
-    shuffle=False,
-    num_workers=4,
-    collate_fn=collate_fn
-    )
-
-    model = FCN8s(num_classes=12)
+    
+    # validation dataset
+    if(CFG.train_all):
+        val_loader=None
+    else:
+        val_dataset = CustomDataLoader(data_dir=val_path, mode='val', transform=val_transform)
+        val_loader = torch.utils.data.DataLoader(dataset=val_dataset, 
+        batch_size= CFG.batch_size,
+        shuffle=False,
+        num_workers=0,
+        collate_fn=collate_fn,
+        drop_last=True
+        )
+    
+    if(CFG.encoder_name is not None and CFG.decoder_name is not None and CFG.pretrain_weight is not None):
+        model = smpModel(encoder=CFG.encoder_name,pretrain_weight=CFG.pretrain_weight,decoder=CFG.decoder_name)
+    elif CFG.model_type ==  "effib7_deepv3":
+        model = DeepLabV3EffiB7Timm(n_classes=12, n_blocks=[3, 4, 23, 3], atrous_rates=[6, 12, 18, 24])
+    elif CFG.model_type == "resnext_deepv3":
+        model = 
+    
     logger.info("*************Model Formatting Test************")
-    x = torch.randn([1, 3, 512, 512])
+    x = torch.randn([2, 3, 512, 512])
     logger.info(f"input shape : {x.shape}")
     out = model(x).to(device)
     logger.info(f"output shape :  {out.size()}")
@@ -233,14 +342,6 @@ def main():
         device = device)
     
 
-class CFG:
-  epochs =  20
-  seed = 21
-  learning_rate = 0.0001
-  batch_size = 16
-  weight_decay = 1e-6
-  save_path = "./saved"
-  aug_type = "basic"
 
 
 if __name__ == '__main__':
@@ -251,13 +352,14 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    sys.path.append("/opt/ml/pstage03")
+    # sys.path.append("/opt/ml/pstage03")
     from dataloader.image import *
     from model.models import *
-    from model.deeplabv3+(effib7) import *
     from util.loss import *
     from util.utils import *
     from util.augmentation import *
+    from model.efficientb7_DeepLabv3_timm import *
+    from model.efficientb7_DeepLabv3_torch import *
 
     with open(args.config) as json_file:
         json_data = json.load(json_file)
@@ -269,12 +371,26 @@ if __name__ == '__main__':
     CFG.batch_size = json_data['batch_size']
     CFG.weight_decay = json_data['weight_decay']
     CFG.aug_type = json_data['aug_type']
+    
     CFG.save_path = args.save
-
+    CFG.save_name = json_data['save_name']
+    CFG.encoder_name = json_data['encoder_name']
+    CFG.decoder_name = json_data['decoder_name']
+    CFG.pretrain_weight=json_data['pretrain_weight']
+    CFG.model_type = json_data['model_type'] # pretrain model을 지정하지 않았을 때 사용
+    
+    
     seed_everything(CFG.seed)
-
+    
+    if json_data['train_all']=="True":
+        CFG.train_all = True
+        logger.info(f"train_all mode")
+    
+    else:
+        CFG.train_all = False
+    
     # save 디렉토리 생성
     if not os.path.isdir(CFG.save_path):
-        os.mkdir(save_path)
+        os.mkdir(CFG.save_path)
 
     main()
