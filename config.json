@@ -1,8 +1,9 @@
 {
-	"epochs" : 20,
-	"seed" : 21,
-	"learning_rate" : 0.0001,
-	"batch_size" : 16,
+	"epochs" : 7,
+	"seed" : 14,
+	"learning_rate" : 5e-5,
+	"batch_size" : 8,
 	"weight_decay" : 1e-6,
-	"aug_type" : "basic"
+	"aug_type" : "basic",
+	"train_all": "True"
 }
