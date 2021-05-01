@@ -16,7 +16,7 @@ dataset_path = '/opt/ml/input/data'
 train_path = dataset_path + '/train.json'
 val_path = dataset_path + '/val.json'
 test_path = dataset_path + '/test.json'
-print('s')
+
 class CFG:
     epochs =  20
     seed = 21
