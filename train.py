@@ -224,6 +224,9 @@ def main():
     if(CFG.train_all):
         #print("train_all_mode")
         train_path=dataset_path + '/train_all.json'
+    else:
+        train_path=dataset_path + '/train.json'
+
     train_dataset = CustomDataLoader(data_dir=train_path, mode='train', transform=train_transform)
     ###
     #print(len(train_dataset))
