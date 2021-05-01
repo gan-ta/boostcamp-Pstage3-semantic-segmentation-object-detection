@@ -224,6 +224,9 @@ def main():
     if(CFG.train_all):
         #print("train_all_mode")
         train_path=dataset_path + '/train_all.json'
+    else:
+        train_path=dataset_path + '/train.json'
+
     train_dataset = CustomDataLoader(data_dir=train_path, mode='train', transform=train_transform)
     ###
     #print(len(train_dataset))
@@ -291,13 +294,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', default=None, type=str,help='config file path')
     parser.add_argument('-s', '--save', default=None, type=str,help='save path')
-    ####
-    parser.add_argument('-n','--savename',default=None,type=str,help="save model name")
-    parser.add_argument('-e','--smpencoder',default=None,type=str,help="encoder name")
-    parser.add_argument('-d','--smpdecoder',default=None,type=str,help="decoder name")
-    parser.add_argument('-p','--smpweight',default=None,type=str,help="pretrain weight name")
     
-    ####
     
     args = parser.parse_args()
 
@@ -320,10 +317,10 @@ if __name__ == '__main__':
     CFG.aug_type = json_data['aug_type']
     
     CFG.save_path = args.save
-    CFG.save_name = args.savename
-    CFG.encoder_name = args.smpencoder
-    CFG.decoder_name = args.smpdecoder
-    CFG.pretrain_weight=args.smpweight
+    CFG.save_name = json_data['save_name']
+    CFG.encoder_name = json_data['encoder_name']
+    CFG.decoder_name = json_data['decoder_name']
+    CFG.pretrain_weight=json_data['pretrain_weight']
     
     
     seed_everything(CFG.seed)
