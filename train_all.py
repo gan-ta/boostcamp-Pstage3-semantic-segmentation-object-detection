@@ -17,6 +17,7 @@ dataset_path = '/opt/ml/input/data'
 train_path = dataset_path + '/train.json'
 val_path = dataset_path + '/val.json'
 test_path = dataset_path + '/test.json'
+train_all_path = dataset_path + '/train_all.json'
 
 
 
@@ -164,7 +165,7 @@ def train(num_epochs, model, data_loader, val_loader, criterion, optimizer, save
                     epoch+1, num_epochs, step+1, len(data_loader), loss.item(), mIoU))
         
         # validation 주기에 따른 loss 출력 및 best model 저장
-        if (epoch + 1) % val_every == 0:
+        '''if (epoch + 1) % val_every == 0:
             avrg_loss, miou_temp = validation(epoch + 1, model, val_loader, criterion, device)
             if best_miou < miou_temp:
                 print('Best performance at epoch: {}'.format(epoch + 1))
@@ -174,8 +175,10 @@ def train(num_epochs, model, data_loader, val_loader, criterion, optimizer, save
                 best_epoch = epoch + 1
                 best_val_loss = avrg_loss
                 best_val_mIoU = miou_temp
-                save_model(model, saved_dir, CFG.name)
-        print('Best epoch #{}  Average Loss: {:.4f}, mIoU: {:.4f}'.format(best_epoch, best_val_loss, best_val_mIoU))
+                save_model(model, saved_dir, CFG.name)'''
+        print('Save model in', saved_dir)
+        save_model(model, saved_dir, CFG.name)
+        #print('Best epoch #{}  Average Loss: {:.4f}, mIoU: {:.4f}'.format(best_epoch, best_val_loss, best_val_mIoU))
 
 def validation(epoch, model, data_loader, criterion, device):
     """validation평가를 위한 함수
@@ -207,13 +210,12 @@ def validation(epoch, model, data_loader, criterion, device):
             cnt += 1
             
             outputs = torch.argmax(outputs.squeeze(), dim=1).detach().cpu().numpy()
-            
+
             hist = add_hist(hist, masks.detach().cpu().numpy(), outputs, n_class=12)
             acc, acc_cls, mIoU, fwavacc = label_accuracy_score(hist)
             
         avrg_loss = total_loss / cnt
         print('Validation #{}  Average Loss: {:.4f}, mIoU: {:.4f}'.format(epoch, avrg_loss, mIoU))
-
     return avrg_loss, mIoU
 
 def main():
@@ -244,12 +246,21 @@ def main():
 
     # train dataset
     train_dataset = CustomDataLoader(data_dir=train_path, mode='train', transform=train_transform)
+    train_all_dataset = CustomDataLoader(data_dir=train_all_path, mode='train', transform=train_transform)
     
     # validation dataset
     val_dataset = CustomDataLoader(data_dir=val_path, mode='val', transform=val_transform)
 
     # DataLoader
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, 
+    batch_size=CFG.batch_size,
+    shuffle=True,
+    num_workers=4,
+    collate_fn=collate_fn,
+    drop_last= True
+    )
+
+    train_all_loader = torch.utils.data.DataLoader(dataset=train_all_dataset, 
     batch_size=CFG.batch_size,
     shuffle=True,
     num_workers=4,
@@ -285,7 +296,7 @@ def main():
     train(
         num_epochs = CFG.epochs, 
         model = model, 
-        data_loader = train_loader, 
+        data_loader = train_all_loader, 
         val_loader = val_loader, 
         criterion = criterion, 
         optimizer = optimizer,
