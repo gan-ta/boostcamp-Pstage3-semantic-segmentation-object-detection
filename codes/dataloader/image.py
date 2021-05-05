@@ -98,6 +98,7 @@ class CustomDataLoader(Dataset):
         paths = os.path.join(data_dir, image_infos['file_name'])
         images = cv2.imread(os.path.join(data_dir, image_infos['file_name']))
         images = cv2.cvtColor(images, cv2.COLOR_BGR2RGB).astype(np.float32)
+        # images = cv2.cvtColor(images, cv2.COLOR_BGR2RGB).astype(np.uint8) # CLAHE를 위한 코드(위 코드 지우기)
         # images /= 255.0
         
         if self.mode in ('train', 'val'):
@@ -118,6 +119,7 @@ class CustomDataLoader(Dataset):
                 pixel_value = self.category_names.index(className)
                 masks = np.maximum(self.coco.annToMask(anns[i])*pixel_value, masks)
             masks = masks.astype(np.float32)
+            # masks = masks.astype(np.uint8) # CLAHE를 위한 코드(위의 코드는 지우기)
 
             # transform -> albumentations 라이브러리 활용
             if self.transform is not None:
