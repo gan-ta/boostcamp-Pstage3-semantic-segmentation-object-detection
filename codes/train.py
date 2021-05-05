@@ -353,7 +353,7 @@ def main(args, config):
     elif config.loss == 'DiceCE':
         pass
     elif config.loss == 'RMI':
-        pass
+        criterion = RMILoss(num_classes=12, loss_weight_lambda=config.loss_weight)
 
     # Optimizer
     learning_rate = config.lr_min if config.lr_scheduler == 'SGDR' else config.learning_rate
