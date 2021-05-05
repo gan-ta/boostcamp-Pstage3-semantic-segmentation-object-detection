@@ -4,7 +4,6 @@
 	"learning_rate" : 0.0001,
 	"batch_size" : 4,
 	"weight_decay" : 1e-6,
-<<<<<<< HEAD
 	"aug_type" : "basic",
 	"train_all": "False",
 	"save_name": "default_model.pt",
@@ -12,7 +11,4 @@
 	"decoder_name": null,
 	"pretrain_weight": null,
 	"model_type" : "effib7_deepv3"
-=======
-	"aug_type" : "aug6"
->>>>>>> feature26
 }
