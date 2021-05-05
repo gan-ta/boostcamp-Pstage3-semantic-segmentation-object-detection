@@ -26,6 +26,7 @@ import wandb
 import torch
 import torch.nn as nn
 import segmentation_models_pytorch as smp
+from adamp import AdamP
 
 """ Custom Modules """
 sys.path.append(os.path.abspath(r'./codes/'))
@@ -134,7 +135,7 @@ def train(epochs, model, data_loader, val_loader, criterion, optimizer, schedule
             # DEBUG: Scheduler
             # scheduler.step()
             # continue
-            # break
+            break
 
             step = step_idx + 1
 
@@ -233,7 +234,7 @@ def eval(epoch, model, data_loader, criterion, device):
         for step_idx, (_, images, masks, _) in enumerate(tqdm(data_loader)):
             # DEBUG
             # continue
-            # break
+            break
 
             # Dataset
             images = torch.stack(images)         # (batch, channel, height, width)
@@ -286,7 +287,7 @@ def main(args, config):
     else:
         device = torch.device("cpu")
         logger.info('No GPU available, using the CPU instead.')
-    logger.info("--------------------------------------------------*\n")
+    logger.info("--------------------------------------------------\n")
 
     """ Dataset """
     # Augmentation
@@ -306,7 +307,7 @@ def main(args, config):
         dataset=train_dataset,
         batch_size=config.batch_size,
         shuffle=True,
-        num_workers=4,
+        num_workers=1,
         collate_fn=collate_fn
         )
 
@@ -314,7 +315,7 @@ def main(args, config):
         dataset=val_dataset,
         batch_size=8,
         shuffle=False,
-        num_workers=4,
+        num_workers=1,
         collate_fn=collate_fn
         )
 
@@ -361,13 +362,11 @@ def main(args, config):
             weight_decay=config.weight_decay
             )
     elif config.optimizer == 'AdamP':
-        pass
-        # optimizer = AdamP(
-        #     params= model.parameters(),
-        #     lr=learning_rate,
-        #     betas=(0.9, 0.999),
-        #     weight_decay=1e-6
-        #     )
+        optimizer = AdamP(
+            params= model.parameters(),
+            lr=learning_rate,
+            weight_decay=1e-6
+            )
     
     # Learning rate scheduler
     if config.lr_scheduler == 'SGDR':
