@@ -4,12 +4,15 @@ import json
 import numpy as np
 import pandas as pd
 
-from pycocotools.coco import COCO
 import cv2
 
 from torch.utils.data import Dataset
+from pycocotools.coco import COCO
 
-dataset_path = '/opt/ml/input/data'
+
+data_dir = r'/opt/ml/input/data/'
+train_config_path = os.path.join(data_dir, r'train.json')
+
 
 def data_eda():
     """데이터 eda 및 학습 데이터에 필요한 데이터 프레임 가져오기 
@@ -18,10 +21,8 @@ def data_eda():
         sorted_df(DataFrame) : 로드 시 필요정보를 가지는 데이터프레임 반환
     """
 
-    anns_file_path = dataset_path + '/' + 'train.json'
-    
     # Read annotations
-    with open(anns_file_path, 'r') as f:
+    with open(train_config_path, 'r') as f:
         dataset = json.loads(f.read())
         
     categories = dataset['categories']
@@ -69,16 +70,18 @@ def data_eda():
 
     return sorted_df
 
+
 def get_classname(classID, cats):
     for i in range(len(cats)):
         if cats[i]['id']==classID:
             return cats[i]['name']
     return "None"
 
+
 class CustomDataLoader(Dataset):
     """ dataloader의 정의
     """
-    def __init__(self, data_dir, mode = 'train', transform = None):
+    def __init__(self, data_dir, mode='train', transform=None):
         super().__init__()
         self.mode = mode
         self.transform = transform
@@ -92,11 +95,12 @@ class CustomDataLoader(Dataset):
         image_infos = self.coco.loadImgs(image_id)[0]
         
         # cv2 를 활용하여 image 불러오기
-        images = cv2.imread(os.path.join(dataset_path, image_infos['file_name']))
+        paths = os.path.join(data_dir, image_infos['file_name'])
+        images = cv2.imread(os.path.join(data_dir, image_infos['file_name']))
         images = cv2.cvtColor(images, cv2.COLOR_BGR2RGB).astype(np.float32)
-        images /= 255.0
+        # images /= 255.0
         
-        if (self.mode in ('train', 'val')):
+        if self.mode in ('train', 'val'):
             ann_ids = self.coco.getAnnIds(imgIds=image_infos['id'])
             anns = self.coco.loadAnns(ann_ids)
 
@@ -121,7 +125,7 @@ class CustomDataLoader(Dataset):
                 images = transformed["image"]
                 masks = transformed["mask"]
             
-            return images, masks, image_infos
+            return paths, images, masks, image_infos
         
         if self.mode == 'test':
             # transform -> albumentations 라이브러리 활용
@@ -130,7 +134,6 @@ class CustomDataLoader(Dataset):
                 images = transformed["image"]
             
             return images, image_infos
-    
     
     def __len__(self) -> int:
         # 전체 dataset의 size를 return
