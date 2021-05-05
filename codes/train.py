@@ -156,12 +156,7 @@ def train(epochs, model, data_loader, val_loader, criterion, optimizer, schedule
             outputs = model(images)
 
             # Loss and optimization
-            # loss = criterion(outputs, masks)
-            loss1 = criterion1(outputs, masks)
-            loss2 = criterion2(outputs, masks)
-            w = 0.2
-            loss = w * loss1 + (1 - w) * loss2
-
+            loss = criterion(outputs, masks)
             _cum_loss += loss.item()
             optimizer.zero_grad()
             loss.backward()
