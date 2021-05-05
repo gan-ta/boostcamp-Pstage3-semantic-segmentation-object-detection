@@ -30,7 +30,7 @@ from adamp import AdamP
 
 """ Custom Modules """
 sys.path.append(os.path.abspath(r'./codes/'))
-sys.path.append(os.path.abspath(r'../'))
+sys.path.append(os.path.abspath(r'../../'))
 from dataloader.image import *
 from model.efficientb7_DeepLabv3_timm import *
 # from model.deeplabv3_ResNext import *
@@ -39,6 +39,7 @@ from model.efficientb7_DeepLabv3_timm import *
 from utils import *
 from augmentation import *
 from loss import *
+from hrnet.loss.rmi import RMILoss
 from scheduler import *
 
 
@@ -401,7 +402,8 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=21, help='Random seed')
     parser.add_argument('-e', '--experiment', type=str, default=None, help='Experiment ID or name (W&B name)')
     parser.add_argument('-w', '--wandb_project', type=str, default='bc_AI_p3_img_seg', help='W&B project (if None, W&B will be not used.')
-    # parser.add_argument('--wandb_sweep', type=bool, default=False, help='W&B sweep (if False, Sweep will be not used.')
+    parser.add_argument('--wandb_group', type=str, default='=new_group', help='W&B group')
+    parser.add_argument('--wandb_sweep', type=bool, default=False, help='W&B sweep (if False, Sweep will be not used.')
     parser.add_argument('-c', '--config', type=str, default=None, help='Configuration file path')
     parser.add_argument('--api', type=str, default='smp', help='API for segmentation model')
     parser.add_argument('-s', '--save_dir', type=str, default='../results/', help='Directory to save')
@@ -417,10 +419,10 @@ if __name__ == '__main__':
         config = Bunch()
         config.update(hparams)
     else:
-        if True:
+        if args.wandb_sweep:
             wandb.init(project=args.wandb_project, config=hparams)
-        # else:
-        #     wandb.init(project=args.wandb_project, name=args.experiment, config=hparams)
+        else:
+            wandb.init(project=args.wandb_project, group=args.wandb_group, name=args.experiment, config=hparams)
         config = wandb.config
     del hparams
 
