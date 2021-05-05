@@ -91,3 +91,10 @@ class ASPP(nn.Module):
 
         output = self.project(x)
         return output
+
+if __name__ == '__main__':
+    model = DeepLabV3EffiB7Timm(n_classes=12, n_blocks=[3, 4, 23, 3], atrous_rates=[6, 12, 18, 24])
+    x = torch.randn([2, 3, 512, 512])
+    print("input shape : ", x.shape)
+    out = model(x)
+    print("output shape : ", out.size())

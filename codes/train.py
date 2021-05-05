@@ -30,6 +30,7 @@ from adamp import AdamP
 
 """ Custom Modules """
 sys.path.append(os.path.abspath(r'./codes/'))
+sys.path.append(os.path.abspath(r'../'))
 from dataloader.image import *
 from model.efficientb7_DeepLabv3_timm import *
 # from model.deeplabv3_ResNext import *
@@ -135,7 +136,7 @@ def train(epochs, model, data_loader, val_loader, criterion, optimizer, schedule
             # DEBUG: Scheduler
             # scheduler.step()
             # continue
-            break
+            # break
 
             step = step_idx + 1
 
@@ -234,7 +235,7 @@ def eval(epoch, model, data_loader, criterion, device):
         for step_idx, (_, images, masks, _) in enumerate(tqdm(data_loader)):
             # DEBUG
             # continue
-            break
+            # break
 
             # Dataset
             images = torch.stack(images)         # (batch, channel, height, width)
@@ -400,6 +401,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=21, help='Random seed')
     parser.add_argument('-e', '--experiment', type=str, default=None, help='Experiment ID or name (W&B name)')
     parser.add_argument('-w', '--wandb_project', type=str, default='bc_AI_p3_img_seg', help='W&B project (if None, W&B will be not used.')
+    # parser.add_argument('--wandb_sweep', type=bool, default=False, help='W&B sweep (if False, Sweep will be not used.')
     parser.add_argument('-c', '--config', type=str, default=None, help='Configuration file path')
     parser.add_argument('--api', type=str, default='smp', help='API for segmentation model')
     parser.add_argument('-s', '--save_dir', type=str, default='../results/', help='Directory to save')
@@ -415,7 +417,10 @@ if __name__ == '__main__':
         config = Bunch()
         config.update(hparams)
     else:
-        wandb.init(project=args.wandb_project, name=args.experiment, config=hparams)
+        if True:
+            wandb.init(project=args.wandb_project, config=hparams)
+        # else:
+        #     wandb.init(project=args.wandb_project, name=args.experiment, config=hparams)
         config = wandb.config
     del hparams
 
