@@ -97,7 +97,7 @@ class CustomDataLoader(Dataset):
         # cv2 를 활용하여 image 불러오기
         paths = os.path.join(data_dir, image_infos['file_name'])
         images = cv2.imread(os.path.join(data_dir, image_infos['file_name']))
-        images = cv2.cvtColor(images, cv2.COLOR_BGR2RGB).astype(np.float32)
+        images = cv2.cvtColor(images, cv2.COLOR_BGR2RGB)#.astype(np.float32)
         # images /= 255.0
         
         if self.mode in ('train', 'val'):

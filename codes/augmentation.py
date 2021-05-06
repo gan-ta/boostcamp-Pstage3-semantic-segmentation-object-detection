@@ -1,10 +1,9 @@
 import cv2
-
-import torch
-
 from PIL import Image
+
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
+import torch
 
 
 def _PILImage2numpy(im_pil):
@@ -65,8 +64,9 @@ def custom_cutmix(img1, img2, mask1, mask2):
     return [torch.FloatTensor(img1_copy), torch.FloatTensor(img2_copy), mask1_copy, mask2_copy]
 
 
-def get_transforms(aug_type):
-    """데이터 Augmentation객체를 불러오는 함수
+def get_transforms(aug_type: str):
+    """
+    Data augmentation 객체 생성
 
     Args:
         aug_type(str) : augmentation타입 지정
@@ -74,12 +74,39 @@ def get_transforms(aug_type):
     Returns :
         list :: train, validation, test데이터 셋에 대한 transform
     """
-    
-    if aug_type == 'no':        
-        train_transform = A.Compose([A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)), ToTensorV2()])
-        val_transform = A.Compose([A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)), ToTensorV2()])
-        test_transform = A.Compose([A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)), ToTensorV2()])
+    # TODO: Normalize
+    if False:
+        pass
+    else:
+        norm_mean = (0, 0, 0)
+        norm_std = (1, 1, 1)
 
+    if aug_type == 'no':
+        train_transform = A.Compose([A.Normalize(mean=norm_mean, std=norm_std), ToTensorV2()])
+        val_transform = A.Compose([A.Normalize(mean=norm_mean, std=norm_std), ToTensorV2()])
+        test_transform = A.Compose([A.Normalize(mean=norm_mean, std=norm_std), ToTensorV2()])
+    elif aug_type == 'dev':
+        pass
+    elif aug_type == 'jin':
+        train_transform = A.Compose([
+            A.HorizontalFlip(p=0.5),
+            A.RandomResizedCrop(512, 512, p=0.8, scale=(0.7, 1.0), ratio=(0.5, 1.5)),
+            A.Rotate(limit=30, p=0.8),
+            A.Cutout(num_holes=4, max_h_size=16, max_w_size=16, p=0.8),
+            A.ElasticTransform(alpha=40, p=0.8),
+            A.CLAHE(clip_limit=3.0, p=0.8),
+            A.Normalize(mean=norm_mean, std=norm_std),
+            ToTensorV2()
+            ])
+        val_transform = A.Compose([
+            A.Normalize(mean=norm_mean, std=norm_std),
+            ToTensorV2()
+            ])
+        test_transform = A.Compose([
+            A.Normalize(mean=norm_mean, std=norm_std),
+            ToTensorV2()
+            ])
+    # TODO: 아래 코드 정리 중
     elif aug_type == 'basic':
         train_transform = A.Compose([
             A.Normalize(

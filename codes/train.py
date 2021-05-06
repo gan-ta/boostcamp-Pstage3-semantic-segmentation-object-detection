@@ -39,7 +39,8 @@ from model.efficientb7_DeepLabv3_timm import *
 from utils import *
 from augmentation import *
 from loss import *
-from hrnet.loss.rmi import RMILoss
+from _smp.segmentation_models_pytorch.losses import SoftCrossEntropyLoss, FocalLoss
+from _hrnet.loss.rmi import RMILoss
 from scheduler import *
 
 
@@ -159,7 +160,12 @@ def train(epochs, model, data_loader, val_loader, criterion, optimizer, schedule
             outputs = model(images)
 
             # Loss and optimization
-            loss = criterion(outputs, masks)
+            if isinstance(criterion, list):
+                loss = 0
+                for _criterion, weights in zip(criterion, config.loss_weights):
+                    loss += weights * _criterion(outputs, masks)
+            else:
+                loss = criterion(outputs, masks)
             _cum_loss += loss.item()
             optimizer.zero_grad()
             loss.backward()
@@ -250,7 +256,12 @@ def eval(epoch, model, data_loader, criterion, device):
             outputs = model(images)
 
             # Loss
-            loss = criterion(outputs, masks)
+            if isinstance(criterion, list):
+                loss = 0
+                for _criterion, weights in zip(criterion, config.loss_weights):
+                    loss += weights * _criterion(outputs, masks)
+            else:
+                loss = criterion(outputs, masks)
             _cum_loss += loss
 
             # Add histogram.
@@ -337,23 +348,35 @@ def main(args, config):
                 atrous_rates=[6, 12, 18, 24]
                 )
 
-    # 
-    logger.info("-------------------- Model Test --------------------")
-    x = torch.randn([2, 3, 512, 512])
-    logger.info(f"Input shape : {x.shape}")
-    out = model(x).to(device)
-    logger.info(f"Output shape: {out.shape}")
-    logger.info("--------------------------------------------------\n")
+    # logger.info("-------------------- Model Test --------------------")
+    # x = torch.randn([2, 3, 512, 512])
+    # logger.info(f"Input shape : {x.shape}")
+    # out = model(x).to(device)
+    # logger.info(f"Output shape: {out.shape}")
+    # logger.info("--------------------------------------------------\n")
 
     model = model.to(device)
 
     # Loss function
     if config.loss == 'CE':
         criterion = nn.CrossEntropyLoss()
+    elif config.loss == 'SoftCE':
+        criterion = SoftCrossEntropyLoss(smooth_factor=config.smooth_factor)
+    elif config.loss == 'Focal':
+        criterion = FocalLoss('multiclass', gamma=config.focal_gamma)
     elif config.loss == 'DiceCE':
         pass
     elif config.loss == 'RMI':
-        criterion = RMILoss(num_classes=12, loss_weight_lambda=config.loss_weight)
+        criterion = RMILoss(num_classes=12, loss_weight_lambda=config.RMI_weight)
+    # TODO: Split 및 getattr() 적용
+    elif config.loss == 'SoftCE+Focal+RMI':
+        criterion = [
+            SoftCrossEntropyLoss(smooth_factor=config.smooth_factor),
+            FocalLoss('multiclass', gamma=config.focal_gamma),
+            RMILoss(num_classes=12, rmi_only=True)
+            ]
+    else:
+        raise Exception('[ERROR] Invalid loss')
 
     # Optimizer
     learning_rate = config.lr_min if config.lr_scheduler == 'SGDR' else config.learning_rate
@@ -367,11 +390,15 @@ def main(args, config):
         optimizer = AdamP(
             params= model.parameters(),
             lr=learning_rate,
-            weight_decay=1e-6
+            weight_decay=config.weight_decay
             )
+    else:
+        raise Exception('[ERROR] Invalid optimizer')
     
     # Learning rate scheduler
-    if config.lr_scheduler == 'SGDR':
+    if config.lr_scheduler == 'no':
+        scheduler = None
+    elif config.lr_scheduler == 'SGDR':
         scheduler = CosineAnnealingWarmUpRestarts(
             optimizer,
             T_0=config.T,
@@ -381,7 +408,7 @@ def main(args, config):
             gamma=config.lr_max_decay
             )
     else:
-        scheduler = None
+        raise Exception('[ERROR] Invalid learning rate scheduler')
 
     """ Train the model """
     train(
