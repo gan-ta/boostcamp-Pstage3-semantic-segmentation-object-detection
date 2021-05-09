@@ -1,6 +1,7 @@
 import cv2
 from PIL import Image
 
+from albumentations import *
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import torch

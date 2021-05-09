@@ -31,17 +31,19 @@ from adamp import AdamP
 """ Custom Modules """
 sys.path.append(os.path.abspath(r'./codes/'))
 sys.path.append(os.path.abspath(r'../../'))
+
 from dataloader.image import *
 from model.efficientb7_DeepLabv3_timm import *
-# from model.deeplabv3_ResNext import *
-# from model.deeplabv3Plus_effib7 import *
-# from model.FCN8s import *
-from utils import *
-from augmentation import *
-from loss import *
-from _smp.segmentation_models_pytorch.losses import SoftCrossEntropyLoss, FocalLoss
-from _hrnet.loss.rmi import RMILoss
-from scheduler import *
+from util.loss import *
+from util.utils import *
+from util.augmentation import *
+from util.scheduler import *
+
+from segmentation_models.segmentation_models_pytorch.losses import SoftCrossEntropyLoss, FocalLoss
+
+from RMI.losses.rmi.rmi import *
+# from _hrnet.loss.rmi import RMILoss
+# from rmi import RMILoss
 
 
 """ Paths """
@@ -373,7 +375,8 @@ def main(args, config):
         criterion = [
             SoftCrossEntropyLoss(smooth_factor=config.smooth_factor),
             FocalLoss('multiclass', gamma=config.focal_gamma),
-            RMILoss(num_classes=12, rmi_only=True)
+            # RMILoss(num_classes=12, rmi_only=True)
+             RMILoss(num_classes=12)
             ]
     else:
         raise Exception('[ERROR] Invalid loss')
@@ -424,6 +427,7 @@ def main(args, config):
 
 
 if __name__ == '__main__':
+
     """ Arguments """
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', type=int, default=21, help='Random seed')
@@ -455,7 +459,7 @@ if __name__ == '__main__':
 
     """ Directories to save models """
     try:
-        if args.save_dir == r'../results/':
+        if args.save_dir == r'/opt/ml/saved/':
             os.makedirs(args.save_dir, exist_ok=True)
         else:
             os.makedirs(args.save_dir)
