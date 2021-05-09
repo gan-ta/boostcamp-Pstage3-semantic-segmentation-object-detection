@@ -2,7 +2,7 @@
 	"model": "DeepLabV3Plus",
 	"enc": "timm-regnety_320",
 	"enc_weights": "imagenet",
-	"epochs" : 30,
+	"epochs" : 20,
 	
 	"loss": "SoftCE+Focal+RMI",
 	"loss_weights": [0.85, 0.1, 0.05],
