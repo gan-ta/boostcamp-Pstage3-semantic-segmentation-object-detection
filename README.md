@@ -5,7 +5,6 @@
 
 
 ## 1. Usage
----
 
 * Training: `python train.py --experiment NEW_EXPERIMENT --config ../config/config.json`
 * Inference: 업데이트 중. 각자의 Jupyter 코드를 사용해주세요.
@@ -23,7 +22,6 @@
 
 
 ## 2. Configuration (.json)
----
 
 1. Base
 
