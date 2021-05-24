@@ -1,5 +1,5 @@
 """
-swin + casecade RCNN 모델 조합(mmdetection 라이브러리에서는 사용하지 않고 swin 전용 저장소에서 사용함)
+swin + casecade RCNN 모델 조합(mmdetection 라이브러리에서는 사용하지 않고 swin 전용 저장소에서 사용)
 """
 _base_ = [
     '../_base_/models/cascade_mask_rcnn_swin_fpn.py',

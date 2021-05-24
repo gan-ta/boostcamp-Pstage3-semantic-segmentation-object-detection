@@ -1,5 +1,5 @@
 """
-ResNext + FPN + fasterRCNN 조합의 모델(최종 Augmentation조합 사용)
+ResNext + FPN + fasterRCNN 조합의 모델
 """
 
 _base_ = [

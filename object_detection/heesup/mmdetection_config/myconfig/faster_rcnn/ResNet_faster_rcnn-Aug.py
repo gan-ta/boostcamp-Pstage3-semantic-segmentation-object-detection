@@ -1,3 +1,7 @@
+"""
+ResNet + FPN + fasterRCNN 조합의 모델
+"""
+
 _base_ = [
     '../_base_/models/faster_rcnn_r50_fpn.py',
     '../_base_/datasets/coco_detection.py',
