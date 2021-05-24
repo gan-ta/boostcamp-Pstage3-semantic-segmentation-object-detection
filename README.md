@@ -8,7 +8,8 @@ Sementic Segmentation 대회 진행
 
 **`source`**  : 기존 베이스라인 코드 모듈화 -> config파일로써 모델 관리 및 wandb 설정
 
-개인별 작업 코드
+
+### 개인별 작업 코드
 
 **`heesup`** :  https://github.com/bcaitech1/p3-ims-obd-detecting-your-mind-ssap-possible/tree/master/sementic_segmentation/%ED%9D%AC%EC%84%AD
 
@@ -32,7 +33,8 @@ https://github.com/open-mmlab/mmdetection
 
 https://github.com/SwinTransformer/Swin-Transformer-Object-Detection
 
-개인별 작업 코드
+
+### 개인별 작업 코드
 
 **`heesup`** :  https://github.com/bcaitech1/p3-ims-obd-detecting-your-mind-ssap-possible/tree/master/object_detection/%ED%9D%AC%EC%84%AD
 
