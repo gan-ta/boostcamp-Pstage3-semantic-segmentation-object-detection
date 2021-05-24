@@ -11,7 +11,7 @@ Sementic Segmentation 대회 진행
 
 ### 개인별 작업 코드
 
-**`heesup`** :  https://github.com/bcaitech1/p3-ims-obd-detecting-your-mind-ssap-possible/tree/master/sementic_segmentation/%ED%9D%AC%EC%84%AD
+**`heesup`** :  https://github.com/bcaitech1/p3-ims-obd-detecting-your-mind-ssap-possible/tree/master/sementic_segmentation/heesup
 
 **`seoyoon`** 
 
@@ -36,7 +36,7 @@ https://github.com/SwinTransformer/Swin-Transformer-Object-Detection
 
 ### 개인별 작업 코드
 
-**`heesup`** :  https://github.com/bcaitech1/p3-ims-obd-detecting-your-mind-ssap-possible/tree/master/object_detection/%ED%9D%AC%EC%84%AD
+**`heesup`** :  https://github.com/bcaitech1/p3-ims-obd-detecting-your-mind-ssap-possible/tree/master/object_detection/heesup
 
 **`seoyoon`** 
 
