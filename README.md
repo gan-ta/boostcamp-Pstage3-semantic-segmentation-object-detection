@@ -1,8 +1,30 @@
 # 부스트캠프 AI Tech
 [P Stage 3] Image segmentation and Detection
 
+
+
+## 팀 소개
+
+- **Detecting your mind SSAP possible**
+- 조원 : [김태진](https://github.com/ktj9279), [김희섭](https://github.com/gan-ta), [김평화](https://github.com/Ajou201421102), [백서윤](https://github.com/seoyoonbaek), [송준영](https://github.com/jy1559), [주찬형](https://github.com/joochanhyeong)
+
+
+## 대회 개요
+
+## 데이터 소개
+
+## Wrap Up
+
+
+
+
+
+
+
+
+
 ## 1~2주차
-Sementic Segmentation 대회 진행
+Semantic Segmentation 대회 진행
 
 디렉토리 구성
 
@@ -47,3 +69,4 @@ https://github.com/SwinTransformer/Swin-Transformer-Object-Detection
 **`pyeonghwa`** 
 
 **`junyoung`** 
+
