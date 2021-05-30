@@ -10,6 +10,7 @@
 
 
 ## 대회 개요
+![sementic_segmentation](https://user-images.githubusercontent.com/39492330/120090670-42a2d480-c13f-11eb-97f7-4095a30fea3a.png)
 
 ## 데이터 소개
 
