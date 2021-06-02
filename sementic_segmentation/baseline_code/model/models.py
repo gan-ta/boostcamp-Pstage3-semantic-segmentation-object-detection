@@ -1,12 +1,10 @@
 #!pip install segmentation-models-pytorch
+import segmentation_models_pytorch as smp
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from torchvision import models
-from torchvision.models import vgg16
-import segmentation_models_pytorch as smp
 from efficientnet_pytorch import EfficientNet
-from torch.nn import functional as F
+from torchvision.models import vgg16
+
 
 class FCN8s(nn.Module):
     def __init__(self, num_classes):
