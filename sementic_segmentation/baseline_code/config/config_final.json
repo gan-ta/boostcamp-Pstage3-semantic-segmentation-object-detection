@@ -23,5 +23,5 @@
 	"T_warmup": 2,
 	"T_mult": 2,
 
-	"aug": "jin"
+	"aug": "final"
 }

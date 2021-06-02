@@ -179,7 +179,7 @@ def get_transforms(aug_type: str):
         test_transform = A.Compose([A.Normalize(mean=norm_mean, std=norm_std), ToTensorV2()])
     elif aug_type == 'dev':
         pass
-    elif aug_type == 'jin':
+    elif aug_type == 'final':
         train_transform = A.Compose([
             A.HorizontalFlip(p=0.5),
             A.RandomResizedCrop(512, 512, p=0.8, scale=(0.7, 1.0), ratio=(0.5, 1.5)),
