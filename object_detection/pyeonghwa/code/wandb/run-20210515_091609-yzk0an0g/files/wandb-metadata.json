@@ -1,0 +1,26 @@
+{
+    "os": "Linux-4.4.0-59-generic-x86_64-with-debian-buster-sid",
+    "python": "3.7.7",
+    "heartbeatAt": "2021-05-15T09:16:10.362652",
+    "startedAt": "2021-05-15T09:16:09.266124",
+    "docker": null,
+    "gpu": "Tesla P40",
+    "gpu_count": 1,
+    "cpu_count": 4,
+    "cuda": null,
+    "args": [
+        "-f",
+        "/opt/ml/.local/share/jupyter/runtime/kernel-cd3d3f33-fed2-4381-a293-625d7bc60926.json"
+    ],
+    "state": "running",
+    "program": "code/mmdetection_trash/test1.ipynb",
+    "root": "/opt/ml/code/mmdetection_trash",
+    "git": {
+        "remote": "https://github.com/Pstage-Segmentation-Detection/mmdetection_trash",
+        "commit": "b42c9ce52bee71d1b3ba0fdd9cf4bae2ba5c95f5"
+    },
+    "email": null,
+    "host": "3806084d759c",
+    "username": "root",
+    "executable": "/opt/conda/bin/python"
+}
