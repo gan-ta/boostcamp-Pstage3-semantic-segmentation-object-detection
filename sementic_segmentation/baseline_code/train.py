@@ -29,7 +29,8 @@ import segmentation_models_pytorch as smp
 from adamp import AdamP
 
 """ Custom Modules """
-sys.path.append(os.path.abspath(r'./codes/'))
+sys.path.append(os.path.abspath(r'./baseline_code/'))
+sys.path.append(os.path.abspath(r'./'))
 sys.path.append(os.path.abspath(r'../../'))
 
 from dataloader.image import *
@@ -39,9 +40,10 @@ from util.utils import *
 from util.augmentation import *
 from util.scheduler import *
 
+
 from segmentation_models.segmentation_models_pytorch.losses import SoftCrossEntropyLoss, FocalLoss
 
-from RMI.losses.rmi.rmi import *
+# from RMI.losses.rmi.rmi import * # 외부 라이브러리 import
 # from _hrnet.loss.rmi import RMILoss
 # from rmi import RMILoss
 
@@ -350,12 +352,12 @@ def main(args, config):
                 atrous_rates=[6, 12, 18, 24]
                 )
 
-    # logger.info("-------------------- Model Test --------------------")
-    # x = torch.randn([2, 3, 512, 512])
-    # logger.info(f"Input shape : {x.shape}")
-    # out = model(x).to(device)
-    # logger.info(f"Output shape: {out.shape}")
-    # logger.info("--------------------------------------------------\n")
+    logger.info("-------------------- Model Test --------------------")
+    x = torch.randn([2, 3, 512, 512])
+    logger.info(f"Input shape : {x.shape}")
+    out = model(x).to(device)
+    logger.info(f"Output shape: {out.shape}")
+    logger.info("--------------------------------------------------\n")
 
     model = model.to(device)
 
@@ -369,7 +371,13 @@ def main(args, config):
     elif config.loss == 'DiceCE':
         pass
     elif config.loss == 'RMI':
-        criterion = RMILoss(num_classes=12, loss_weight_lambda=config.RMI_weight)
+        # criterion = RMILoss(num_classes=12, loss_weight_lambda=config.RMI_weight)
+        criterion = [
+            SoftCrossEntropyLoss(smooth_factor=config.smooth_factor),
+            FocalLoss('multiclass', gamma=config.focal_gamma),
+            # RMILoss(num_classes=12, rmi_only=True)
+            RMILoss(num_classes=12)
+        ]
     # TODO: Split 및 getattr() 적용
     elif config.loss == 'SoftCE+Focal+RMI':
         criterion = [
