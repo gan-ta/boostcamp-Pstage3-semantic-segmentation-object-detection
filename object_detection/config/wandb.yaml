@@ -1,0 +1,21 @@
+"""
+wandb.init() parameters
+
+REF: https://docs.wandb.ai/ref/python/init
+"""
+
+project: "bc-ai-p3-object-detection"
+entity: "jjin"
+config: null
+group: "HTC"
+job_type: ""
+tags: ["HTC", "Swin-S", "FPN-CARAFE", "all"]
+name: "Swin-S"
+notes: null
+notes: null
+dir: "../wandb/"
+resume: null
+reinit: null
+
+# Use sweep or not: bool
+use_sweep: False

@@ -1,66 +1,17 @@
 # 부스트캠프 AI Tech
-
-### [P Stage 3] Image segmentation and Detection
-### 14조 너의 마음 검출도 쌉가능
+[P Stage 3] Image segmentation and Detection
 
 
-## 1. Usage
----
 
-* Training: `python train.py --experiment new_experiment --config ../config/config.json`
-<!-- * Inference: `` -->
+## 팀 소개
 
-
-<!-- ## Directory 구조 -->
+- **Detecting your mind SSAP possible**
+- 조원 : [김태진](https://github.com/ktj9279), [김희섭](https://github.com/gan-ta), [김평화](https://github.com/Ajou201421102), [백서윤](https://github.com/seoyoonbaek), [송준영](https://github.com/jy1559), [주찬형](https://github.com/joochanhyeong)
 
 
-<!-- ## Command Line Arguments -->
-<!-- --- -->
+## 대회 개요
+바야흐로 대량 생산, 대량 소비의 시대. 우리는 많은 물건이 대량으로 만들어져 쏟아져 나오고, 그에 따라 대량으로 소비되는 시대를 살고 있습니다. 하지만 이러한 문화는 심각한 쓰레기 문제를 낳고 있습니다. '쓰레기 대란', '매립지 부족'과 같은 표현을 뉴스에서 듣는 빈도가 점점 늘어나고 있다는 것만으로도 그 문제가 얼마나 심각한지 알 수 있습니다.
 
-<!-- ### `train.py` -->
+이러한 환경 부담을 조금이나마 줄일 수 있는 방법의 하나로 '분리수거'가 있습니다. 잘 분리배출 된 쓰레기는 자원으로서 가치를 인정받아 재활용되지만, 잘못 분리배출 되면 그대로 폐기물로 분류되어 매립, 소각되기 때문입니다. 우리나라의 분리 수거율은 굉장히 높은 것으로 알려져 있고, 또 최근 이러한 쓰레기 문제가 주목받으며 더욱 많은 사람이 분리수거에 동참하려 하고 있습니다. 하지만 '이 쓰레기가 어디에 속하는지', '어떤 것들을 분리해서 버리는 것이 맞는지' 등 정확한 분리수거 방법을 알기 어렵다는 문제점이 있습니다.
 
-<!-- ### `inference.py` -->
-
-
-## 2. Configuration (.json)
----
-
-1. Base
-
-> * `model`: str (default: "DeepLabV3Plus")
->     * ["DeepLabV3Plus", "DeepLabV3EffiB7Timm"]
-> * `enc`: str (default: "timm-regnety_320")
->     * ["timm-regnety_320", "timm-efficientnet-b0", "timm-efficientnet-b3"]
-> * `enc_weights`: str (default: "imagenet")
->     * ["imagenet", "noisy-student"]
-> * `epochs`: int (default: 20)
-
-2. Loss
- 
-> * `loss`: str (default: "CE")
->     * ["CE", "DiceCE", "RMI"]
-> * `loss_weight`: float (default: 0.5)
->     * Compound loss 사용시 `loss = loss_weight * distribution-based_loss + (1 - loss_weight) * region-based_loss`
-
-3. Optimizer
- 
-> * `optimizer`: str (default: "Adam")
->     * ["Adam", "AdamP"]
-> * `weight_decay`: float, (default: 1e-6)
-
-4. Batch size and learning rate
- 
-> * `batch_size` : int (default: 8)
-> * `learning_rate` : float (default: 1e-4)
-> * `lr_scheduler`: str (default: "no")
->     * ["no", "SGDR"]
-> * `lr_min`: float (default: 1e-6)
-> * `lr_max`: float (default: 1e-4)
-> * `lr_max_decay`: float (default: 0.8)
-> * `T`: int (default: 4)
-> * `T_warmup`: int (default: 2)
-> * `T_mult`: int (default: 2)
-
-5. Data augmentation (업데이트 중)
-
-> * `aug`: str (default: "no)
+따라서, 우리는 **쓰레기가 찍힌 사진에서 쓰레기를 Segmentation / Detection 하는 모델**을 만들어 이러한 문제점을 해결해보고자 합니다. 문제 해결을 위한 데이터셋으로는 일반 쓰레기, 플라스틱, 종이, 유리 등 11 종류의 쓰레기가 찍힌 사진 데이터셋이 제공됩니다.

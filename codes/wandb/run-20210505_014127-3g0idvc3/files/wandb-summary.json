@@ -1,1 +1,0 @@
-{"epoch": 1, "lr": 0.001, "loss": 0.0, "train_mIoU": NaN, "val_loss": 2.586127281188965, "val_mIoU": 0.011764018047889983, "_runtime": 230, "_timestamp": 1620179117, "_step": 0}
